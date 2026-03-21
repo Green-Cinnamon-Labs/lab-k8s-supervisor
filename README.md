@@ -1,25 +1,37 @@
-# CAPI Lab EC2
+# Lab K8s Supervisor
 
-Para montar o ambiente e provisionar a infraestrutura com Terraform + AWS, é necessário instalar:
+Repositório de infraestrutura para o projeto **Tennessee Eastman Digital Twin Lab**.
+Contém configurações de cluster, manifests de deploy e scripts de setup para rodar a planta TEP + operator supervisório em diferentes ambientes.
 
----
+## Ambientes
 
-## **Terraform**  
-Download: https://developer.hashicorp.com/terraform/downloads  
+| Diretório | Ambiente | Status |
+|-----------|----------|--------|
+| [`local/`](local/) | **Kind** (cluster local, sem cloud) | ativo |
+| [`k8s-lab-1-aws/`](k8s-lab-1-aws/) | AWS (EC2 + Terraform) | legado |
+| [`k8s-lab-1-azr/`](k8s-lab-1-azr/) | Azure | placeholder |
+| [`k8s-lab-1-gcp/`](k8s-lab-1-gcp/) | GCP | placeholder |
 
-O Terraform é uma ferramenta de **Infrastructure as Code (IaC)**.  
-Ele permite declarar toda a infraestrutura (EC2, VPC, Security Groups, Key Pairs etc.) em arquivos `.tf` e criar tudo de forma automatizada.  
-Domínio: **infraestrutura** → ele conversa direto com a AWS para criar recursos.
+## Lab Local (Kind)
 
----
+O ambiente principal de desenvolvimento. Roda tudo no seu PC com Docker + Kind.
 
-## **AWS CLI**  
-Download: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html  
+**Pré-requisitos:** Docker, Kind (v0.27+), kubectl.
 
-O AWS CLI é a ferramenta oficial para interagir com a AWS pelo terminal.  
-É usado para autenticar, checar credenciais, testar permissões e validar se sua conta está configurada corretamente antes do Terraform rodar.  
-Domínio: **gerenciamento e autenticação** → fornece as credenciais e perfis que o Terraform usará.
+```bash
+cd local/
+bash setup.sh
+```
 
----
+Detalhes completos em [`local/README.md`](local/README.md).
 
-> **NOTA.:** O `.gitignore` está ignorando muitos recursos que serão criados aqui. Assim, não estranhe se eles não aparecerem em seu repositório remoto.
+## Repositórios relacionados
+
+| Repo | Descrição |
+|------|-----------|
+| [fork-tennesseeEastman](https://github.com/Green-Cinnamon-Labs/fork-tennesseeEastman) | Planta TEP (simulação Rust + gRPC) |
+| [cluster-api-provider-plc](https://github.com/Green-Cinnamon-Labs/cluster-api-provider-plc) | Operator supervisório (Go + controller-runtime) |
+
+## Nota
+
+> O `.gitignore` ignora credenciais, chaves SSH, e artefatos do Terraform. É normal que esses arquivos não apareçam no repositório remoto.

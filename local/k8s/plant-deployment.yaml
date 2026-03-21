@@ -1,0 +1,48 @@
+# Deploy da planta Tennessee Eastman no cluster Kind.
+# A planta roda em modo headless (sem TUI, sem CSV) e expõe gRPC na porta 50051.
+# O Service usa NodePort 30051 para que o Kind mapeie pro host (kind-config.yaml).
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: te-plant
+  labels:
+    app: te-plant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: te-plant
+  template:
+    metadata:
+      labels:
+        app: te-plant
+    spec:
+      containers:
+        - name: te-plant
+          image: te-plant:latest
+          imagePullPolicy: Never   # imagem carregada via `kind load`
+          ports:
+            - containerPort: 50051
+              name: grpc
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: te-plant
+spec:
+  selector:
+    app: te-plant
+  ports:
+    - name: grpc
+      port: 50051
+      targetPort: 50051
+      nodePort: 30051
+  type: NodePort

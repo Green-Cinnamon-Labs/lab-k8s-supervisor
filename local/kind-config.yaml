@@ -1,0 +1,23 @@
+# Kind cluster config para o lab TEP local.
+# Cluster name: tep-lab
+#
+# Port mappings:
+#   - 50051 → gRPC da planta (acesso externo ao cluster para debug)
+#   - 30000 → NodePort genérico (se precisar expor algo via NodePort)
+#
+# Uso: kind create cluster --config kind-config.yaml
+
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: tep-lab
+nodes:
+  - role: control-plane
+    extraPortMappings:
+      # gRPC da planta — acessível em localhost:50051
+      - containerPort: 30051
+        hostPort: 50051
+        protocol: TCP
+      # NodePort genérico
+      - containerPort: 30000
+        hostPort: 30000
+        protocol: TCP

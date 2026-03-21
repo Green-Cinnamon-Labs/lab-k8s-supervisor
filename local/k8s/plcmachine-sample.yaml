@@ -1,0 +1,52 @@
+# CR de exemplo — política supervisória para a planta TEP baseline.
+# O operator vai monitorar essas faixas e ajustar os controladores
+# quando os valores saírem dos limites definidos.
+
+apiVersion: infrastructure.greenlabs.io/v1alpha1
+kind: PLCMachine
+metadata:
+  name: tep-baseline
+spec:
+  plantAddress: "te-plant.default.svc:50051"
+
+  operatingRanges:
+    - name: reactor_pressure
+      xmeasIndex: 6          # XMEAS(7) — pressão do reator
+      min: 2600.0
+      max: 2800.0
+
+    - name: separator_level
+      xmeasIndex: 11         # XMEAS(12) — nível do separador
+      min: 40.0
+      max: 60.0
+
+    - name: stripper_level
+      xmeasIndex: 14         # XMEAS(15) — nível do stripper
+      min: 40.0
+      max: 60.0
+
+  responseRules:
+    - name: pressure_high
+      watchRef: reactor_pressure
+      condition: above_max
+      controllerID: pressure_reactor
+      parameter: kp
+      adjustValue: 0.15
+
+    - name: pressure_low
+      watchRef: reactor_pressure
+      condition: below_min
+      controllerID: pressure_reactor
+      parameter: kp
+      adjustValue: 0.05
+
+    - name: separator_high
+      watchRef: separator_level
+      condition: above_max
+      controllerID: level_separator
+      parameter: setpoint
+      adjustValue: 45.0
+
+  monitoringInterval:
+    baseMs: 2000
+    transientMs: 200

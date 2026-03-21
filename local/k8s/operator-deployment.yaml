@@ -1,0 +1,70 @@
+# Deploy do operator supervisório (cluster-api-provider-plc).
+# Ele monitora PLCMachine CRs e conecta nas plantas via gRPC.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: plc-operator
+  labels:
+    app: plc-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: plc-operator
+  template:
+    metadata:
+      labels:
+        app: plc-operator
+    spec:
+      serviceAccountName: plc-operator
+      containers:
+        - name: manager
+          image: plc-operator:latest
+          imagePullPolicy: Never   # imagem carregada via `kind load`
+          ports:
+            - containerPort: 8080
+              name: metrics
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
+---
+# ServiceAccount + RBAC mínimo pro operator funcionar.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: plc-operator
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: plc-operator-role
+rules:
+  # Acesso total aos PLCMachine CRs
+  - apiGroups: ["infrastructure.greenlabs.io"]
+    resources: ["plcmachines"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["infrastructure.greenlabs.io"]
+    resources: ["plcmachines/status"]
+    verbs: ["get", "update", "patch"]
+  # Events (pra registrar ações)
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: plc-operator-rolebinding
+subjects:
+  - kind: ServiceAccount
+    name: plc-operator
+    namespace: default
+roleRef:
+  kind: ClusterRole
+  name: plc-operator-role
+  apiGroup: rbac.authorization.k8s.io
