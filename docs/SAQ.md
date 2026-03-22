@@ -64,6 +64,14 @@ Com CRDs, recursos de infraestrutura entram no mesmo fluxo do Kubernetes:
 
 ## Por que o operator roda dentro do Kind e não como container separado?
 
+Existem dois tipos de Pod conceitualmente:
+
+Pods que o Kubernetes mantém — são as aplicações. Um servidor web, uma API, um banco de dados. O Kubernetes garante que estão rodando, reinicia se caírem, escala se precisar. O Kubernetes não sabe o que eles fazem, só mantém eles vivos.
+
+Pods que estendem o Kubernetes — são os operators/controllers. Eles rodam como Pod, mas o propósito deles é dar capacidades novas ao Kubernetes. O CAPA é um Pod que ensina o Kubernetes a criar EC2 na AWS. O seu operator é um Pod que ensina o Kubernetes a supervisionar uma planta industrial. Sem eles, o Kubernetes não sabe o que é uma Machine na AWS nem o que é um PLCMachine.
+
+O seu operator é do segundo tipo. Ele é uma extensão do Kubernetes — é como se você estivesse instalando um "plugin" que dá ao cluster a capacidade de entender e supervisionar a planta TEP. Ele roda como Pod porque é assim que extensões são deployadas no Kubernetes, mas ele não é uma aplicação que o Kubernetes "mantém no ar" — ele é parte do próprio Kubernetes expandido.
+
 Porque o Kubernetes só gerencia o que roda dentro dele. Ele não sabe que existem containers Docker avulsos na máquina.
 
 O operator precisa ler e escrever recursos PLCMachine no cluster (buscar spec, atualizar status). Rodando como Pod, ele faz isso nativamente via controller-runtime, usando o ServiceAccount e o RBAC do cluster. O Kubernetes garante que o operator está rodando, reinicia se cair, e pode escalar se necessário.
@@ -79,6 +87,12 @@ Em produção, o nó seria uma VM real (ou bare metal). O Kubernetes rodaria dir
 
 
 ## A planta roda no Kubernetes?
+
+Não. A planta está fora do Kubernetes. Ela é um container Docker standalone na sua máquina.
+
+Se ela estivesse dentro do Kind como Pod, aí sim seria um Pod do primeiro tipo — uma aplicação que o Kubernetes mantém rodando.
+
+No seu caso a planta é um sistema externo, como a AWS é pro CAPA. O CAPA não roda a AWS dentro do Kubernetes — ele se conecta nela. O seu operator não roda a planta dentro do Kubernetes — ele se conecta nela via gRPC.
 
 Não. A planta é um sistema externo. Roda como container Docker standalone fora do cluster, expondo gRPC na porta 50051.
 
@@ -99,10 +113,3 @@ Sem esse comando, o Kubernetes tentaria puxar a imagem de um registry remoto (Do
 Não. O Kubernetes tem seu próprio runtime de containers (containerd) dentro dos nós. Ele não sabe que o Docker Desktop existe na sua máquina.
 
 Quando você faz `docker build`, a imagem fica no Docker Desktop. Quando o Kubernetes precisa rodar um Pod, ele pede pro containerd (dentro do nó). São dois mundos separados. Por isso as imagens precisam ser carregadas explicitamente no Kind com `kind load docker-image`.
-
-
-## Por que o paradigma de microsserviços?
-
-## Por que contêineres?
-
-## De onde veio Gollang?
