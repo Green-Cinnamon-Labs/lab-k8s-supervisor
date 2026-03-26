@@ -1,15 +1,20 @@
 # Lab Local — Kind + TEP
 
-Lab local para rodar o operator supervisório dentro de um cluster Kind no seu próprio PC.
+Lab local para rodar o experimento Tennessee Eastman completo no seu PC.
 
-A **planta TEP roda fora do cluster**, como container Docker standalone.
-O **operator roda dentro do Kind** e conecta na planta via gRPC.
+Sao tres pecas:
 
-**Nenhuma cloud.** Só Docker + Kind.
+| Peca | Container | Funcao |
+|------|-----------|--------|
+| **te-plant** | Docker standalone | Planta TEP (Rust). Simula o processo quimico e expoe metricas via gRPC na porta 50051. |
+| **plc-operator** | Pod dentro do Kind | Operator K8s (Go). Conecta na planta, le XMEAS, grava status no CRD, e (futuramente) toma acoes de controle. |
+| **tep-ihm** | Docker standalone | Dashboard web (Python). Mostra graficos e tabelas da planta em tempo real na porta 8080. |
 
-## Pré-requisitos
+**Nenhuma cloud.** So Docker + Kind.
 
-| Ferramenta | Versão mínima | Instalação |
+## Pre-requisitos
+
+| Ferramenta | Versao minima | Instalacao |
 |------------|---------------|------------|
 | Docker     | 20.10+        | [docs.docker.com](https://docs.docker.com/get-docker/) |
 | Kind       | 0.27+         | `choco install kind` ou [kind.sigs.k8s.io](https://kind.sigs.k8s.io/docs/user/quick-start/#installation) |
@@ -19,86 +24,141 @@ O **operator roda dentro do Kind** e conecta na planta via gRPC.
 
 ```
 local/
+├── docker-compose.yml            # Sobe planta + IHM juntos
 ├── kind-config.yaml              # Config do cluster Kind
 ├── setup.sh                      # Script que sobe o cluster + operator
 ├── k8s/
 │   ├── crd.yaml                  # CRD PLCMachine (copiar do operator)
 │   ├── operator-deployment.yaml  # Deploy + RBAC do operator
-│   └── plcmachine-sample.yaml   # CR de exemplo (política supervisória)
+│   └── plcmachine-sample.yaml   # CR de exemplo (politica supervisoria)
 └── README.md                     # Este arquivo
 ```
 
-## Passo a passo
+---
 
-### 1. Subir a planta (Docker standalone)
+## Teste completo — passo a passo
 
-A planta roda fora do Kind, como um container normal:
+### 1. Buildar as tres imagens
+
+Antes de tudo, as imagens Docker precisam existir na sua maquina. Cada uma vem de um repo diferente:
 
 ```bash
+# Planta (fork-tennesseeEastman)
 cd <path-to-fork-tennesseeEastman>
 docker build -t te-plant:latest .
-docker run --rm -p 50051:50051 te-plant:latest
-```
 
-A planta fica acessível em `localhost:50051` (gRPC).
-
-### 2. Buildar a imagem do operator
-
-```bash
+# Operator (cluster-api-provider-plc)
 cd <path-to-cluster-api-provider-plc>
 docker build -t plc-operator:latest .
+
+# IHM (tep-ihm)
+cd <path-to-tep-ihm>
+docker build -t tep-ihm:latest .
 ```
 
-### 3. Copiar o CRD
+Apos o build, confirme que as tres imagens aparecem no Docker Desktop ou via `docker images`.
 
-O CRD é gerado pelo `controller-gen` no repo do operator. Copie ele pra cá:
+### 2. Subir planta + IHM (docker compose)
+
+```bash
+cd lab-k8s-supervisor/local/
+docker compose up
+```
+
+Isso sobe dois containers:
+- `te-plant` — planta rodando gRPC na porta 50051
+- `tep-ihm` — dashboard na porta 8080, conectando na planta pela rede interna do Compose
+
+A IHM ja consegue mostrar dados da planta mesmo sem o Kind rodando.
+
+Abra `http://localhost:8080` e voce deve ver:
+- Graficos de pressao, temperatura, nivel e vazao atualizando em tempo real
+- Tabelas de XMEAS e XMV com valores, unidades e nomes
+- Painel de alarmes
+- Status do solver (Steady-state / Slow transient / Fast transient)
+
+### 3. Subir o Kind + operator (setup.sh)
+
+Em outro terminal:
+
+```bash
+cd lab-k8s-supervisor/local/
+bash setup.sh
+```
+
+O script:
+1. Cria o cluster Kind `tep-lab` (se nao existir)
+2. Copia a imagem `plc-operator:latest` do Docker Desktop pra dentro do Kind (`kind load`)
+3. Aplica o CRD PLCMachine
+4. Deploya o operator e o CR de exemplo
+
+### 4. Verificar
+
+```bash
+# Operator rodando?
+kubectl get pods
+
+# Status do PLCMachine com metricas reais da planta?
+kubectl get plcmachines
+kubectl get plcmachine tep-baseline -o yaml
+```
+
+O que voce deve ver:
+
+- Pod `plc-operator-*` com status `Running`
+- PLCMachine `tep-baseline` com `phase: Stable`
+- No `.status.variables`: valores reais de XMEAS lidos da planta
+- No `.status.plantTime`: tempo de simulacao avancando
+
+### 5. Copiar o CRD (se necessario)
+
+O CRD e gerado pelo `controller-gen` no repo do operator. Se voce alterou os types do CRD, copie a versao atualizada:
 
 ```bash
 cp <path-to-cluster-api-provider-plc>/config/crd/bases/infrastructure.greenlabs.io_plcmachines.yaml local/k8s/crd.yaml
 ```
 
-### 4. Rodar o setup
+---
 
-```bash
-cd local/
-bash setup.sh
+## Conectividade
+
+```
+Docker Desktop (host)
+├── te-plant (:50051)         ← container Compose
+├── tep-ihm  (:8080)          ← container Compose, conecta em te-plant:50051 via rede Compose
+└── tep-lab-control-plane     ← container Kind
+    └── plc-operator (Pod)    ← conecta em host.docker.internal:50051
 ```
 
-O script:
-1. Cria o cluster Kind `tep-lab` (se não existir)
-2. Carrega a imagem do operator no cluster (`kind load`)
-3. Aplica o CRD
-4. Deploya o operator e CR de exemplo
+- A **IHM** conecta na planta pelo nome do service do Compose (`te-plant:50051`).
+- O **operator** (dentro do Kind) conecta na planta via `host.docker.internal:50051`, porque a planta expoe a porta 50051 no host e o Kind acessa o host por essa rota.
+- O Kind e o Compose sao redes Docker separadas, mas ambos conseguem alcancar a planta pela porta exposta no host.
 
-### 5. Verificar
+---
+
+## Comandos uteis
 
 ```bash
-# Operator rodando?
-kubectl get pods
+# Parar planta + IHM
+docker compose down
+
+# Logs do operator
 kubectl logs -f deploy/plc-operator
 
-# Status do CR?
-kubectl get plcmachines
+# Detalhes do PLCMachine
 kubectl describe plcmachine tep-baseline
-```
 
-### 6. Conectividade operator → planta
-
-O operator dentro do Kind precisa alcançar a planta que roda no host.
-No `plcmachine-sample.yaml`, o `plantAddress` deve apontar pro IP do host
-visto de dentro do Kind. Em geral:
-
-- **Linux:** `host.docker.internal:50051` ou o IP da bridge docker
-- **Windows/Mac:** `host.docker.internal:50051` funciona direto
-
-## Destruir o lab
-
-```bash
+# Destruir o cluster Kind
 kind delete cluster --name tep-lab
+
+# Rebuildar so uma imagem (ex: IHM apos mudanca no frontend)
+cd <path-to-tep-ihm>
+docker build -t tep-ihm:latest .
+docker compose up -d tep-ihm    # reinicia so a IHM
 ```
 
 ## Issues relacionadas
 
 - [#39 — Setup Kind cluster local](https://github.com/Green-Cinnamon-Labs/lab-k8s-supervisor/issues/39)
 - [#40 — Deploy operator como Deployment](https://github.com/Green-Cinnamon-Labs/lab-k8s-supervisor/issues/40)
-- [#41 — Teste E2E](https://github.com/Green-Cinnamon-Labs/lab-k8s-supervisor/issues/41)
+- [#42 — Dashboard de observabilidade](https://github.com/Green-Cinnamon-Labs/spec-tennessee-eastman/issues/42)

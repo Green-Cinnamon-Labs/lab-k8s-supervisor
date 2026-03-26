@@ -1,0 +1,23 @@
+# docker compose up        — sobe planta + IHM
+# docker compose up -d     — sobe em background
+# docker compose down      — para tudo
+#
+# O Kind (plc-operator) continua sendo gerenciado pelo setup.sh,
+# porque é um cluster Kubernetes e não um container simples.
+
+services:
+  te-plant:
+    image: te-plant:latest
+    container_name: te-plant
+    ports:
+      - "50051:50051"
+
+  tep-ihm:
+    image: tep-ihm:latest
+    container_name: tep-ihm
+    ports:
+      - "8080:8080"
+    environment:
+      - PLANT_ADDRESS=te-plant:50051
+    depends_on:
+      - te-plant
