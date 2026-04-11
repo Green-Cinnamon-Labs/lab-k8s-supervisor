@@ -19,5 +19,8 @@ services:
       - "8080:8080"
     environment:
       - PLANT_ADDRESS=te-plant:50051
+      - K8S_SERVER=https://host.docker.internal:6443
+    volumes:
+      - ~/.kube/config:/root/.kube/config:ro
     depends_on:
       - te-plant
