@@ -9,7 +9,7 @@
 #   - kind instalado (v0.27+)
 #   - kubectl instalado
 #   - imagem do operator já buildada:
-#       docker build -t plc-operator:latest <path-to-cluster-api-provider-plc>
+#       docker build -t plc-operator:latest <path-to-tep-operator>
 #
 # Uso: bash setup.sh
 
@@ -43,7 +43,7 @@ if docker image inspect plc-operator:latest > /dev/null 2>&1; then
     echo "  ✓ plc-operator:latest"
 else
     echo "  ⚠ plc-operator:latest não encontrada. Builde antes:"
-    echo "    docker build -t plc-operator:latest <path-to-cluster-api-provider-plc>"
+    echo "    docker build -t plc-operator:latest <path-to-tep-operator>"
 fi
 
 # ── 3. Aplicar CRD + deploy operator ──────────────────────────────────────
@@ -53,7 +53,7 @@ if [ -f "${SCRIPT_DIR}/k8s/crd.yaml" ]; then
     kubectl apply -f "${SCRIPT_DIR}/k8s/crd.yaml"
     echo "  ✓ crd.yaml"
 else
-    echo "  ⚠ CRD não encontrado em k8s/crd.yaml. Copie de cluster-api-provider-plc:"
+    echo "  ⚠ CRD não encontrado em k8s/crd.yaml. Copie de tep-operator:"
     echo "    cp config/crd/bases/infrastructure.greenlabs.io_plcmachines.yaml local/k8s/crd.yaml"
 fi
 

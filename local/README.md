@@ -43,12 +43,12 @@ local/
 Antes de tudo, as imagens Docker precisam existir na sua maquina. Cada uma vem de um repo diferente:
 
 ```bash
-# Planta (fork-tennesseeEastman)
-cd <path-to-fork-tennesseeEastman>
+# Planta (tep-plant)
+cd <path-to-tep-plant>
 docker build -t te-plant:latest .
 
-# Operator (cluster-api-provider-plc)
-cd <path-to-cluster-api-provider-plc>
+# Operator (tep-operator)
+cd <path-to-tep-operator>
 docker build -t plc-operator:latest .
 
 # IHM (tep-ihm)
@@ -61,7 +61,7 @@ Apos o build, confirme que as tres imagens aparecem no Docker Desktop ou via `do
 ### 2. Subir planta + IHM (docker compose)
 
 ```bash
-cd lab-k8s-supervisor/local/
+cd tep-supervisor/local/
 docker compose up
 ```
 
@@ -82,7 +82,7 @@ Abra `http://localhost:8080` e voce deve ver:
 Em outro terminal:
 
 ```bash
-cd lab-k8s-supervisor/local/
+cd tep-supervisor/local/
 bash setup.sh
 ```
 
@@ -115,7 +115,7 @@ O que voce deve ver:
 O CRD e gerado pelo `controller-gen` no repo do operator. Se voce alterou os types do CRD, copie a versao atualizada:
 
 ```bash
-cp <path-to-cluster-api-provider-plc>/config/crd/bases/infrastructure.greenlabs.io_plcmachines.yaml local/k8s/crd.yaml
+cp <path-to-tep-operator>/config/crd/bases/infrastructure.greenlabs.io_plcmachines.yaml local/k8s/crd.yaml
 ```
 
 ---
@@ -159,6 +159,6 @@ docker compose up -d tep-ihm    # reinicia so a IHM
 
 ## Issues relacionadas
 
-- [#39 — Setup Kind cluster local](https://github.com/Green-Cinnamon-Labs/lab-k8s-supervisor/issues/39)
-- [#40 — Deploy operator como Deployment](https://github.com/Green-Cinnamon-Labs/lab-k8s-supervisor/issues/40)
+- [#39 — Setup Kind cluster local](https://github.com/Green-Cinnamon-Labs/tep-supervisor/issues/39)
+- [#40 — Deploy operator como Deployment](https://github.com/Green-Cinnamon-Labs/tep-supervisor/issues/40)
 - [#42 — Dashboard de observabilidade](https://github.com/Green-Cinnamon-Labs/spec-tennessee-eastman/issues/42)

@@ -29,8 +29,8 @@ Detalhes completos em [`local/README.md`](local/README.md).
 
 | Repo | Descrição |
 |------|-----------|
-| [fork-tennesseeEastman](https://github.com/Green-Cinnamon-Labs/fork-tennesseeEastman) | Planta TEP (simulação Rust + gRPC) |
-| [cluster-api-provider-plc](https://github.com/Green-Cinnamon-Labs/cluster-api-provider-plc) | Operator supervisório (Go + controller-runtime) |
+| [tep-plant](https://github.com/Green-Cinnamon-Labs/tep-plant) | Planta TEP (simulação Rust + gRPC) |
+| [tep-operator](https://github.com/Green-Cinnamon-Labs/tep-operator) | Operator supervisório (Go + controller-runtime) |
 
 ## Nota
 

@@ -1,4 +1,4 @@
-# Deploy do operator supervisório (cluster-api-provider-plc).
+# Deploy do operator supervisório (tep-operator).
 # Ele monitora PLCMachine CRs e conecta nas plantas via gRPC.
 
 apiVersion: apps/v1
