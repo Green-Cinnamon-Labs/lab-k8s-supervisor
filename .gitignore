@@ -4,6 +4,7 @@
 .aws/ec2-keys
 *Administrator_accessKeys*
 *credentials*
+local/data*
 
 
 # Lixos e Coisas específicas do Terraform para um projeto

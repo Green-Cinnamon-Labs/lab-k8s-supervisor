@@ -13,7 +13,6 @@ services:
       - "50051:50051"
     environment:
       - STEP_DELAY_MS=36    # 100x real time — 1h simulada = 36s de relógio
-      # - ACTIVE_IDV=4      # ativar distúrbios: descomente e liste IDVs separados por vírgula
 
   tep-ihm:
     image: tep-ihm:latest
@@ -23,9 +22,6 @@ services:
     environment:
       - PLANT_ADDRESS=te-plant:50051
       - K8S_SERVER=https://host.docker.internal:6443
-      - RECORD_CSV=true
-      - RECORD_CSV_PATH=/data/recording.csv
-      - ACTIVE_IDV=    # deve ser igual ao ACTIVE_IDV da te-plant
     volumes:
       - ~/.kube/config:/root/.kube/config:ro
       - ./data:/data
